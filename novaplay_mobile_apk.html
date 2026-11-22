@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NovaPlay & Utility</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        :root {
+            --accent-from: #06b6d4;
+            --accent-to: #3b82f6;
+            --accent-hex: #22d3ee;
+            --accent-soft: rgba(34, 211, 238, 0.14);
+            --accent-border: rgba(34, 211, 238, 0.35);
+            --surface-bg: #11131d;
+            --app-bg: #07080e;
+        }
+
+        body.oled-mode {
+            --surface-bg: #09090b;
+            --app-bg: #000000;
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--app-bg);
+            color: #f8fafc;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .phone-shell {
+            background-color: var(--app-bg);
+            transition: background-color 0.25s ease;
+        }
+
+        .surface-card {
+            background-color: var(--surface-bg);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            transition: background-color 0.25s ease, border-color 0.25s ease;
+        }
+
+        .accent-gradient {
+            background: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+        }
+
+        .accent-text {
+            color: var(--accent-hex);
+        }
+
+        .accent-bg-soft {
+            background-color: var(--accent-soft);
+        }
+
+        .accent-border {
+            border-color: var(--accent-border);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        @keyframes eqBounce {
+            0%, 100% { height: 25%; }
+            50% { height: 100%; }
+        }
+        .eq-bar {
+            width: 3px;
+            border-radius: 9999px;
+            background: var(--accent-hex);
+            animation: eqBounce 0.85s ease-in-out infinite;
+        }
+        .eq-paused .eq-bar {
+            animation-play-state: paused;
+            height: 25%;
+        }
+
+        input[type="range"].novaplay-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            outline: none;
+        }
+        input[type="range"].novaplay-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-hex);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Full-screen mobile layout optimized for Android WebView & APK wrappers -->
+    <div id="app-frame" class="phone-shell relative w-full min-h-screen flex flex-col">
+
+        <!-- Top Header Bar -->
+        <header class="sticky top-0 px-4 pt-3.5 pb-3 border-b border-white/[0.06] bg-[#07080e]/90 backdrop-blur-md flex items-center justify-between shrink-0 z-20">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-9 h-9 rounded-2xl accent-gradient flex items-center justify-center text-white shadow-lg shrink-0">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="text-sm font-extrabold tracking-tight text-white truncate">NovaPlay & Utility</h1>
+                        <span class="px-1.5 py-0.5 rounded-md accent-bg-soft accent-text text-[9px] font-bold uppercase">APK</span>
+                    </div>
+                    <p id="header-subtitle" class="text-[11px] text-slate-400 truncate">Multi-Source Media & Smart Tools</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 shrink-0">
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-semibold text-emerald-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Offline
+                </span>
+                <button onclick="openSettingsModal()" aria-label="Settings" class="p-2.5 rounded-2xl bg-white/[0.05] active:bg-white/[0.12] text-slate-200 transition">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Scrollable Viewport -->
+        <main id="main-scroll" class="flex-1 px-4 py-4 pb-24 space-y-4">
+
+            <!-- TAB 1: HOME -->
+            <section id="tab-home" class="tab-panel space-y-4">
+                <div class="surface-card rounded-3xl p-4 flex items-center justify-between gap-3 accent-border">
+                    <div class="space-y-1 min-w-0">
+                        <span class="text-[10px] font-bold uppercase tracking-wider accent-text">Device Health</span>
+                        <h2 class="text-sm font-bold text-white">68.4 GB / 128 GB Used</h2>
+                        <p class="text-[11px] text-slate-400">RAM Free: <span id="home-ram-text" class="text-white font-semibold">3.4 GB</span> • Cache: <span id="home-cache-text" class="text-white font-semibold">1.2 GB</span></p>
+                    </div>
+                    <button onclick="switchTab('tools')" class="px-3.5 py-2.5 rounded-2xl accent-gradient text-white text-xs font-bold shadow-lg shrink-0 active:scale-95 transition">
+                        Optimize
+                    </button>
+                </div>
+
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Quick Actions</h3>
+                    <div class="grid grid-cols-3 gap-2.5">
+                        <button onclick="switchTab('downloads')" class="surface-card rounded-2xl p-3 flex flex-col items-center justify-center gap-1.5 text-center active:scale-95 transition">
+                            <div class="w-10 h-10 rounded-2xl accent-bg-soft accent-text flex items-center justify-center">
+                                <i data-lucide="download-cloud" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-[11px] font-bold text-white">Song / List DL</span>
+                            <span class="text-[9px] text-slate-400">Spotify • YT • IG</span>
+                        </button>
+
+                        <button onclick="switchTab('media')" class="surface-card rounded-2xl p-3 flex flex-col items-center justify-center gap-1.5 text-center active:scale-95 transition">
+                            <div class="w-10 h-10 rounded-2xl bg-violet-500/15 text-violet-400 flex items-center justify-center">
+                                <i data-lucide="headphones" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-[11px] font-bold text-white">Offline Player</span>
+                            <span class="text-[9px] text-slate-400">HD & Lossless</span>
+                        </button>
+
+                        <button onclick="runQuickBoostFromHome()" class="surface-card rounded-2xl p-3 flex flex-col items-center justify-center gap-1.5 text-center active:scale-95 transition">
+                            <div class="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                                <i data-lucide="zap" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-[11px] font-bold text-white">Fast Boost</span>
+                            <span class="text-[9px] text-slate-400">Free Memory</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="surface-card rounded-3xl p-3.5 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0 cursor-pointer" onclick="switchTab('media')">
+                        <div class="w-12 h-12 rounded-2xl accent-gradient flex items-center justify-center text-white shrink-0">
+                            <i data-lucide="music-2" class="w-6 h-6"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Continue Playing</span>
+                            <p id="home-now-title" class="text-xs font-bold text-white truncate">Nenjukkul Peidhidum (Lo-Fi Edit)</p>
+                            <p id="home-now-artist" class="text-[11px] text-slate-400 truncate">Harris Jayaraj • Offline Ready</p>
+                        </div>
+                    </div>
+                    <button onclick="togglePlayPause()" aria-label="Play or Pause" class="w-10 h-10 rounded-2xl accent-gradient text-white flex items-center justify-center shrink-0 shadow-md active:scale-95 transition">
+                        <i id="home-play-icon" data-lucide="play" class="w-4 h-4 fill-current"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Recent Offline Library</h3>
+                        <button onclick="switchTab('media')" class="text-[11px] font-semibold accent-text">See All</button>
+                    </div>
+                    <div id="home-recent-list" class="space-y-2"></div>
+                </div>
+            </section>
+
+            <!-- TAB 2: MEDIA PLAYER -->
+            <section id="tab-media" class="tab-panel hidden space-y-4">
+                <div class="surface-card rounded-3xl p-4 space-y-4 accent-border">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-16 h-16 rounded-2xl accent-gradient flex items-center justify-center text-white shrink-0 shadow-lg">
+                            <i data-lucide="disc-3" class="w-8 h-8"></i>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5">
+                                <span id="media-source-tag" class="px-2 py-0.5 rounded-md accent-bg-soft accent-text text-[9px] font-bold uppercase">OFFLINE • 320K</span>
+                                <div id="equalizer-bars" class="eq-paused flex items-end gap-0.5 h-3.5 ml-1">
+                                    <span class="eq-bar"></span>
+                                    <span class="eq-bar" style="animation-delay: 0.15s;"></span>
+                                    <span class="eq-bar" style="animation-delay: 0.3s;"></span>
+                                    <span class="eq-bar" style="animation-delay: 0.45s;"></span>
+                                </div>
+                            </div>
+                            <h2 id="media-track-title" class="text-base font-extrabold text-white truncate mt-1">Nenjukkul Peidhidum (Lo-Fi Edit)</h2>
+                            <p id="media-track-artist" class="text-xs text-slate-400 truncate">Harris Jayaraj • Offline Cache</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <input id="media-scrubber" type="range" min="0" max="100" value="28" oninput="seekTrack(this.value)" class="w-full novaplay-slider">
+                        <div class="flex items-center justify-between text-[10px] font-medium text-slate-400">
+                            <span id="media-time-current">01:12</span>
+                            <span id="media-time-total">04:18</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-5 pt-1">
+                        <button onclick="prevTrack()" aria-label="Previous Track" class="p-3 rounded-2xl bg-white/[0.05] text-white active:scale-95 transition">
+                            <i data-lucide="skip-back" class="w-5 h-5"></i>
+                        </button>
+                        <button onclick="togglePlayPause()" aria-label="Play Pause" class="w-14 h-14 rounded-2xl accent-gradient text-white flex items-center justify-center shadow-xl active:scale-95 transition">
+                            <i id="media-play-icon" data-lucide="play" class="w-6 h-6 fill-current"></i>
+                        </button>
+                        <button onclick="nextTrack()" aria-label="Next Track" class="p-3 rounded-2xl bg-white/[0.05] text-white active:scale-95 transition">
+                            <i data-lucide="skip-forward" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    <button onclick="setMediaFilter('all')" data-filter="all" class="media-filter-chip px-3 py-1.5 rounded-xl text-xs font-bold accent-gradient text-white shrink-0">All Offline</button>
+                    <button onclick="setMediaFilter('spotify')" data-filter="spotify" class="media-filter-chip px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/[0.05] text-slate-300 shrink-0">Spotify</button>
+                    <button onclick="setMediaFilter('apple')" data-filter="apple" class="media-filter-chip px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/[0.05] text-slate-300 shrink-0">Apple Music</button>
+                    <button onclick="setMediaFilter('youtube')" data-filter="youtube" class="media-filter-chip px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/[0.05] text-slate-300 shrink-0">YouTube</button>
+                    <button onclick="setMediaFilter('instagram')" data-filter="instagram" class="media-filter-chip px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/[0.05] text-slate-300 shrink-0">Reels Audio</button>
+                </div>
+
+                <div id="media-queue-list" class="space-y-2"></div>
+            </section>
+
+            <!-- TAB 3: DOWNLOADS -->
+            <section id="tab-downloads" class="tab-panel hidden space-y-4">
+                <div class="surface-card rounded-3xl p-4 space-y-3.5">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-bold text-white">Song & Playlist Downloader</h2>
+                        <span class="text-[10px] font-bold accent-text uppercase">Multi-Source</span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <input id="dl-url-input" type="text" oninput="autoDetectInputSource()" value="https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO" placeholder="Paste Spotify, Apple, YouTube, or Instagram link..." class="flex-1 min-w-0 px-3.5 py-2.5 rounded-2xl bg-[#090a10] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+                        <button onclick="pasteDemoLink()" title="Cycle Sample Links" class="p-2.5 rounded-2xl bg-white/[0.06] text-slate-200 active:scale-95 transition shrink-0">
+                            <i data-lucide="clipboard-paste" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-[#090a10] border border-white/5">
+                        <button id="mode-playlist-btn" onclick="setDownloadMode('playlist')" class="py-2 rounded-xl text-[11px] font-bold accent-gradient text-white transition">
+                            Full Playlist (Batch)
+                        </button>
+                        <button id="mode-single-btn" onclick="setDownloadMode('single')" class="py-2 rounded-xl text-[11px] font-semibold text-slate-400 transition">
+                            Single Song / Reel
+                        </button>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Sources (Tap to Test)</span>
+                            <span id="detected-source-badge" class="text-[10px] font-bold text-emerald-400 truncate">Detected: SPOTIFY</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+                            <button onclick="selectSourcePreset('spotify')" class="px-2.5 py-1.5 rounded-xl bg-[#1DB954]/15 border border-[#1DB954]/30 text-[#1DB954] text-[10px] font-bold flex items-center gap-1.5 shrink-0">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#1DB954]"></span> Spotify
+                            </button>
+                            <button onclick="selectSourcePreset('apple')" class="px-2.5 py-1.5 rounded-xl bg-[#FA243C]/15 border border-[#FA243C]/30 text-[#FA243C] text-[10px] font-bold flex items-center gap-1.5 shrink-0">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#FA243C]"></span> Apple Music
+                            </button>
+                            <button onclick="selectSourcePreset('youtube')" class="px-2.5 py-1.5 rounded-xl bg-[#FF0000]/15 border border-[#FF0000]/30 text-[#FF5555] text-[10px] font-bold flex items-center gap-1.5 shrink-0">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#FF0000]"></span> YouTube
+                            </button>
+                            <button onclick="selectSourcePreset('instagram')" class="px-2.5 py-1.5 rounded-xl bg-[#E1306C]/15 border border-[#E1306C]/30 text-[#F472B6] text-[10px] font-bold flex items-center gap-1.5 shrink-0">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#E1306C]"></span> Instagram
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-2 pt-0.5">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="setAudioQuality('MP3 320kbps')" data-qual="MP3 320kbps" class="qual-chip px-2.5 py-1 rounded-xl text-[10px] font-bold accent-bg-soft accent-text border accent-border">MP3 320k</button>
+                            <button onclick="setAudioQuality('FLAC Lossless')" data-qual="FLAC Lossless" class="qual-chip px-2.5 py-1 rounded-xl text-[10px] font-semibold bg-white/5 text-slate-400 border border-transparent">FLAC</button>
+                            <button onclick="setAudioQuality('M4A 256kbps')" data-qual="M4A 256kbps" class="qual-chip px-2.5 py-1 rounded-xl text-[10px] font-semibold bg-white/5 text-slate-400 border border-transparent">M4A 256k</button>
+                        </div>
+                        <button onclick="fetchPlaylistPreview()" class="px-4 py-2 rounded-2xl accent-gradient text-xs font-bold text-white shadow-lg shrink-0 active:scale-95 transition">
+                            Fetch
+                        </button>
+                    </div>
+                </div>
+
+                <div id="playlist-preview-card" class="surface-card rounded-3xl p-4 space-y-3 accent-border">
+                    <div class="flex items-center gap-3">
+                        <div class="w-14 h-14 rounded-2xl accent-gradient flex items-center justify-center text-white shrink-0 shadow-lg relative">
+                            <i data-lucide="list-music" class="w-7 h-7"></i>
+                            <span id="preview-badge-count" class="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-md bg-black/85 border border-white/15 text-[9px] font-bold text-white">4 Tracks</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span id="preview-source-pill" class="px-1.5 py-0.5 rounded bg-[#1DB954]/20 text-[#1DB954] text-[9px] font-bold uppercase">SPOTIFY</span>
+                                <span id="preview-type-tag" class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[9px] font-bold uppercase">PLAYLIST READY</span>
+                                <span id="preview-quality-tag" class="text-[10px] text-slate-400">MP3 320kbps</span>
+                            </div>
+                            <h3 id="preview-title" class="text-sm font-bold text-white truncate mt-0.5">Spotify • Tamil Midnight Chill Mix</h3>
+                            <p id="preview-meta" class="text-[11px] text-slate-400">4 Songs • 28.8 MB Total</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-[11px] pt-1 border-t border-white/5">
+                        <span class="text-slate-400">Select tracks for offline</span>
+                        <div class="flex items-center gap-3">
+                            <button onclick="setAllTracksChecked(true)" class="font-semibold accent-text">Select All</button>
+                            <button onclick="setAllTracksChecked(false)" class="font-semibold text-slate-400">None</button>
+                        </div>
+                    </div>
+
+                    <div id="playlist-tracks-list" class="space-y-1.5 max-h-52 overflow-y-auto pr-0.5"></div>
+
+                    <button id="download-selected-btn" onclick="startBatchDownload()" class="w-full py-3 rounded-2xl accent-gradient text-white text-xs font-extrabold shadow-lg flex items-center justify-center gap-2 active:scale-[0.99] transition">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Download Selected (4)</span>
+                    </button>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Offline Downloads Queue</h3>
+                        <span id="queue-count-label" class="text-[11px] font-semibold text-slate-400">0 Active</span>
+                    </div>
+                    <div id="active-downloads-list" class="space-y-2">
+                        <div class="surface-card rounded-2xl p-3 text-center text-xs text-slate-400">
+                            No active downloads. Fetch a playlist or song above and tap Download.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: TOOLS -->
+            <section id="tab-tools" class="tab-panel hidden space-y-4">
+                <div class="surface-card rounded-3xl p-4 space-y-3 accent-border">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider accent-text">Storage & Junk Engine</span>
+                            <h2 class="text-sm font-bold text-white">Smart Cleaner</h2>
+                            <p id="cleaner-status-text" class="text-[11px] text-slate-400">1.24 GB residual cache & temp files found</p>
+                        </div>
+                        <div class="text-right">
+                            <span id="cleaner-gauge-val" class="text-lg font-extrabold accent-text">68%</span>
+                            <p class="text-[10px] text-slate-400">Used</p>
+                        </div>
+                    </div>
+                    <div class="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
+                        <div id="cleaner-progress-bar" class="h-full rounded-full accent-gradient transition-all duration-500" style="width: 68%;"></div>
+                    </div>
+                    <button onclick="runSmartClean()" class="w-full py-2.5 rounded-2xl accent-gradient text-white text-xs font-bold shadow-md active:scale-95 transition">
+                        Clean Junk & Cache Now
+                    </button>
+                </div>
+
+                <div class="surface-card rounded-3xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-9 h-9 rounded-2xl accent-bg-soft accent-text flex items-center justify-center">
+                                <i data-lucide="scissors" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-white">Audio Cutter & Ringtone Maker</h3>
+                                <p class="text-[10px] text-slate-400">Trim highlight clip from downloaded songs</p>
+                            </div>
+                        </div>
+                        <span id="cutter-duration-badge" class="px-2 py-1 rounded-lg bg-white/5 text-[10px] font-bold text-white">0:15 - 0:45 (30s)</span>
+                    </div>
+
+                    <div class="space-y-1">
+                        <input id="cutter-slider" type="range" min="0" max="120" value="30" oninput="updateCutterLabel(this.value)" class="w-full novaplay-slider">
+                        <div class="flex justify-between text-[10px] text-slate-400">
+                            <span>Start: <strong id="cutter-start" class="text-white">0:15</strong></span>
+                            <span>Clip Length: <strong id="cutter-len" class="text-white">30s</strong></span>
+                        </div>
+                    </div>
+
+                    <button onclick="saveRingtoneClip()" class="w-full py-2 rounded-xl bg-white/[0.07] text-white text-xs font-bold active:scale-95 transition">
+                        Export as Ringtone (.MP3)
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="surface-card rounded-3xl p-3.5 space-y-2.5 flex flex-col justify-between">
+                        <div class="space-y-1">
+                            <div class="w-9 h-9 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                                <i data-lucide="cpu" class="w-4 h-4"></i>
+                            </div>
+                            <h3 class="text-xs font-bold text-white">Turbo RAM Boost</h3>
+                            <p id="ram-boost-desc" class="text-[10px] text-slate-400">Kill idle background tasks & free RAM.</p>
+                        </div>
+                        <button onclick="runRamBoost()" class="w-full py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold active:scale-95 transition">
+                            Boost RAM
+                        </button>
+                    </div>
+
+                    <div class="surface-card rounded-3xl p-3.5 space-y-2.5 flex flex-col justify-between">
+                        <div class="space-y-1">
+                            <div class="w-9 h-9 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center">
+                                <i data-lucide="copy-check" class="w-4 h-4"></i>
+                            </div>
+                            <h3 class="text-xs font-bold text-white">Duplicate Finder</h3>
+                            <p id="dup-scan-desc" class="text-[10px] text-slate-400">Scan duplicate songs & audio clips.</p>
+                        </div>
+                        <button onclick="runDuplicateScan()" class="w-full py-2 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-bold active:scale-95 transition">
+                            Scan Duplicates
+                        </button>
+                    </div>
+                </div>
+
+                <div class="surface-card rounded-3xl p-4 space-y-3">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-2xl bg-violet-500/15 text-violet-400 flex items-center justify-center">
+                                <i data-lucide="shield-check" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-white">Private Offline Vault</h3>
+                                <p id="vault-status-text" class="text-[10px] text-slate-400">Locked • Hide sensitive downloads</p>
+                            </div>
+                        </div>
+                        <button id="vault-toggle-btn" onclick="togglePrivateVault()" class="px-3 py-1.5 rounded-xl bg-white/10 text-white text-[11px] font-bold active:scale-95 transition">
+                            Unlock
+                        </button>
+                    </div>
+
+                    <div class="pt-2.5 border-t border-white/5 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-2xl bg-sky-500/15 text-sky-400 flex items-center justify-center">
+                                <i data-lucide="wifi" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-white">Wi-Fi PC Transfer</h3>
+                                <p id="wifi-share-text" class="text-[10px] text-slate-400">http://192.168.1.42:8080</p>
+                            </div>
+                        </div>
+                        <button onclick="toggleWifiShare()" class="px-3 py-1.5 rounded-xl accent-bg-soft accent-text text-[11px] font-bold active:scale-95 transition">
+                            Start Share
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 4 BOTTOM NAVIGATION TABS -->
+        <nav aria-label="Primary Navigation" class="fixed bottom-0 inset-x-0 bg-[#0b0d15]/95 backdrop-blur-xl border-t border-white/[0.08] px-2 py-2 flex items-center justify-around z-30">
+            <button onclick="switchTab('home')" data-tab="home" class="nav-tab-btn flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl accent-text transition">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">Home</span>
+            </button>
+            <button onclick="switchTab('media')" data-tab="media" class="nav-tab-btn flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl text-slate-400 transition">
+                <i data-lucide="play-circle" class="w-5 h-5"></i>
+                <span class="text-[10px] font-semibold">Media</span>
+            </button>
+            <button onclick="switchTab('downloads')" data-tab="downloads" class="nav-tab-btn flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl text-slate-400 transition">
+                <i data-lucide="download" class="w-5 h-5"></i>
+                <span class="text-[10px] font-semibold">Downloads</span>
+            </button>
+            <button onclick="switchTab('tools')" data-tab="tools" class="nav-tab-btn flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl text-slate-400 transition">
+                <i data-lucide="wrench" class="w-5 h-5"></i>
+                <span class="text-[10px] font-semibold">Tools</span>
+            </button>
+        </nav>
+
+        <!-- SETTINGS MODAL -->
+        <div id="settings-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-40 flex items-end justify-center p-4">
+            <div class="surface-card w-full rounded-3xl p-5 space-y-4 border border-white/15">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-extrabold text-white">Theme & Appearance Settings</h3>
+                    <button onclick="closeSettingsModal()" class="p-1.5 rounded-xl bg-white/5 text-slate-300">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-2">
+                    <span class="text-[11px] font-semibold text-slate-400">Accent Color</span>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="setAccentTheme('cyan')" class="py-2 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-bold">Cyan</button>
+                        <button onclick="setAccentTheme('violet')" class="py-2 rounded-xl bg-violet-500/20 border border-violet-400/40 text-violet-300 text-xs font-bold">Violet</button>
+                        <button onclick="setAccentTheme('emerald')" class="py-2 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-bold">Emerald</button>
+                        <button onclick="setAccentTheme('amber')" class="py-2 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold">Amber</button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-white/10">
+                    <div>
+                        <p class="text-xs font-bold text-white">OLED True Black Mode</p>
+                        <p class="text-[10px] text-slate-400">Pure #000000 background for AMOLED screens</p>
+                    </div>
+                    <button id="oled-toggle-btn" onclick="toggleOledMode()" class="px-3.5 py-1.5 rounded-xl bg-white/10 text-xs font-bold text-white">
+                        OFF
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast-banner" class="hidden fixed top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-2xl bg-slate-900/95 border border-white/15 text-white text-xs font-semibold shadow-2xl z-50 max-w-[90%] text-center">
+            Ready
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'home';
+        let activeFilter = 'all';
+        let currentTrackIndex = 0;
+        let isPlaying = false;
+        let currentProgress = 28;
+        let playInterval = null;
+        let oledEnabled = false;
+        let vaultUnlocked = false;
+        let wifiSharing = false;
+        let storageUsedPct = 68;
+
+        const mediaTracks = [
+            { id: 't1', title: 'Nenjukkul Peidhidum (Lo-Fi Edit)', artist: 'Harris Jayaraj • Offline Cache', source: 'spotify', durationSec: 258, sizeMB: 7.4, quality: 'MP3 320k', freq: 261.63 },
+            { id: 't2', title: 'Kanave Kanave (ALAC Master)', artist: 'Anirudh • Apple Spatial', source: 'apple', durationSec: 218, sizeMB: 9.2, quality: 'FLAC', freq: 392.00 },
+            { id: 't3', title: 'Hukum (Official Audio 320k)', artist: 'Anirudh Ravichander • YT Music', source: 'youtube', durationSec: 207, sizeMB: 6.8, quality: 'MP3 320k', freq: 220.00 },
+            { id: 't4', title: 'Viral Midnight Synth Reel Audio', artist: '@nova.beats • Instagram Reel', source: 'instagram', durationSec: 45, sizeMB: 1.8, quality: 'M4A 256k', freq: 523.25 }
+        ];
+
+        const multiSourceCatalog = {
+            spotify: {
+                sourceName: 'SPOTIFY',
+                sourceColor: 'bg-[#1DB954]/20 text-[#1DB954]',
+                demoUrl: 'https://open.spotify.com/playlist/37i9dQZF1DX4sWSpwq3LiO',
+                title: 'Spotify • Tamil Midnight Chill Mix',
+                tracks: [
+                    { id: 'sp-1', title: 'Nenjukkul Peidhidum (Lo-Fi Edit)', artist: 'Harris Jayaraj • Spotify HQ', duration: '04:18', durationSec: 258, sizeMB: 7.4, checked: true, freq: 261.63 },
+                    { id: 'sp-2', title: 'Munbe Vaa (Acoustic Midnight)', artist: 'A.R. Rahman • Spotify HQ', duration: '04:52', durationSec: 292, sizeMB: 8.1, checked: true, freq: 293.66 },
+                    { id: 'sp-3', title: 'New York Nagaram (Ambient)', artist: 'A.R. Rahman • Night Drive', duration: '04:05', durationSec: 245, sizeMB: 6.9, checked: true, freq: 329.63 },
+                    { id: 'sp-4', title: 'Vaseegara (Rain & Piano)', artist: 'Bombay Jayashri • Lo-Fi', duration: '03:49', durationSec: 229, sizeMB: 6.4, checked: true, freq: 349.23 }
+                ]
+            },
+            apple: {
+                sourceName: 'APPLE MUSIC',
+                sourceColor: 'bg-[#FA243C]/20 text-[#FA243C]',
+                demoUrl: 'https://music.apple.com/in/playlist/kollywood-lossless-hits/pl.u-9N9LX',
+                title: 'Apple Music • Spatial Lossless Hits',
+                tracks: [
+                    { id: 'am-1', title: 'Kanave Kanave (ALAC Master)', artist: 'Anirudh • Apple Digital Master', duration: '03:38', durationSec: 218, sizeMB: 9.2, checked: true, freq: 392.00 },
+                    { id: 'am-2', title: 'Thalli Pogathey (Dolby Mix)', artist: 'Sid Sriram • Spatial Audio', duration: '04:12', durationSec: 252, sizeMB: 8.8, checked: true, freq: 440.00 },
+                    { id: 'am-3', title: 'Naan Pizhai (Lossless 24-bit)', artist: 'Anirudh & Ravi G', duration: '04:04', durationSec: 244, sizeMB: 8.5, checked: true, freq: 493.88 }
+                ]
+            },
+            youtube: {
+                sourceName: 'YOUTUBE MUSIC',
+                sourceColor: 'bg-[#FF0000]/20 text-[#FF5555]',
+                demoUrl: 'https://music.youtube.com/playlist?list=PL_NovaWorkoutBass2026',
+                title: 'YouTube • High-Bass Workout Jukebox',
+                tracks: [
+                    { id: 'yt-1', title: 'Hukum (Official Audio 320k)', artist: 'Anirudh Ravichander • YT Music', duration: '03:27', durationSec: 207, sizeMB: 6.8, checked: true, freq: 220.00 },
+                    { id: 'yt-2', title: 'Vaathi Coming (Bass Boosted)', artist: 'Anirudh • Club Edit', duration: '03:50', durationSec: 230, sizeMB: 7.1, checked: true, freq: 246.94 },
+                    { id: 'yt-3', title: 'Vikram Title Track (HD Audio)', artist: 'Anirudh Ravichander', duration: '03:35', durationSec: 215, sizeMB: 6.9, checked: true, freq: 277.18 }
+                ]
+            },
+            instagram: {
+                sourceName: 'INSTAGRAM REEL',
+                sourceColor: 'bg-[#E1306C]/20 text-[#F472B6]',
+                demoUrl: 'https://www.instagram.com/reels/audio/982374928374/',
+                title: 'Instagram • Trending Reels Audio',
+                tracks: [
+                    { id: 'ig-1', title: 'Viral Midnight Synth Reel Audio', artist: '@nova.beats • Original Audio', duration: '00:45', durationSec: 45, sizeMB: 1.8, checked: true, freq: 523.25 },
+                    { id: 'ig-2', title: 'Aesthetic Rain Guitar Loop (Reel)', artist: '@tamil.lofi • Trending', duration: '00:32', durationSec: 32, sizeMB: 1.4, checked: true, freq: 587.33 }
+                ]
+            }
+        };
+
+        let activeSourceKey = 'spotify';
+        let currentFetchedPlaylist = JSON.parse(JSON.stringify(multiSourceCatalog.spotify));
+        let downloadMode = 'playlist';
+        let selectedQuality = 'MP3 320kbps';
+        let downloadQueue = [];
+
+        let toastTimer = null;
+        function showToast(msg) {
+            const el = document.getElementById('toast-banner');
+            if (!el) return;
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                el.classList.add('hidden');
+            }, 2400);
+        }
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.toggle('hidden', panel.id !== `tab-${tabName}`);
+            });
+
+            document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+                const isActive = btn.dataset.tab === tabName;
+                btn.classList.toggle('accent-text', isActive);
+                btn.classList.toggle('text-slate-400', !isActive);
+                const label = btn.querySelector('span');
+                if (label) {
+                    label.classList.toggle('font-bold', isActive);
+                    label.classList.toggle('font-semibold', !isActive);
+                }
+            });
+
+            const subtitles = {
+                home: 'Multi-Source Media & Smart Tools',
+                media: 'Offline HD & Lossless Audio Player',
+                downloads: 'Spotify • Apple • YouTube • Reels Downloader',
+                tools: 'Cleaner • Cutter • RAM Boost • Vault'
+            };
+            const subEl = document.getElementById('header-subtitle');
+            if (subEl && subtitles[tabName]) {
+                subEl.textContent = subtitles[tabName];
+            }
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        function formatTime(sec) {
+            const s = Math.max(0, Math.floor(sec));
+            const mins = Math.floor(s / 60);
+            const rem = s % 60;
+            return `${String(mins).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
+        }
+
+        let audioCtx = null;
+        let synthOsc = null;
+        let synthGain = null;
+
+        function startRealAudioSynth(freq = 261.63) {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                stopRealAudioSynth();
+                synthOsc = audioCtx.createOscillator();
+                synthGain = audioCtx.createGain();
+                synthOsc.type = 'sine';
+                synthOsc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                synthGain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+                synthOsc.connect(synthGain);
+                synthGain.connect(audioCtx.destination);
+                synthOsc.start();
+            } catch (e) {}
+        }
+
+        function stopRealAudioSynth() {
+            if (synthOsc) {
+                try {
+                    synthOsc.stop();
+                    synthOsc.disconnect();
+                } catch (e) {}
+                synthOsc = null;
+            }
+        }
+
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+            const track = mediaTracks[currentTrackIndex] || mediaTracks[0];
+            if (isPlaying) {
+                startRealAudioSynth(track.freq);
+                clearInterval(playInterval);
+                playInterval = setInterval(() => {
+                    currentProgress += 0.6;
+                    if (currentProgress >= 100) {
+                        currentProgress = 0;
+                        nextTrack();
+                    } else {
+                        updatePlayerUI();
+                    }
+                }, 500);
+            } else {
+                stopRealAudioSynth();
+                clearInterval(playInterval);
+            }
+            updatePlayerUI();
+        }
+
+        function playSpecificTrack(index) {
+            if (index < 0 || index >= mediaTracks.length) return;
+            currentTrackIndex = index;
+            currentProgress = 0;
+            isPlaying = true;
+            startRealAudioSynth(mediaTracks[index].freq);
+            clearInterval(playInterval);
+            playInterval = setInterval(() => {
+                currentProgress += 0.6;
+                if (currentProgress >= 100) {
+                    currentProgress = 0;
+                    nextTrack();
+                } else {
+                    updatePlayerUI();
+                }
+            }, 500);
+            updatePlayerUI();
+            renderMediaQueue();
+            showToast(`Playing: ${mediaTracks[index].title}`);
+        }
+
+        function nextTrack() {
+            currentTrackIndex = (currentTrackIndex + 1) % mediaTracks.length;
+            currentProgress = 0;
+            if (isPlaying) startRealAudioSynth(mediaTracks[currentTrackIndex].freq);
+            updatePlayerUI();
+            renderMediaQueue();
+        }
+
+        function prevTrack() {
+            currentTrackIndex = (currentTrackIndex - 1 + mediaTracks.length) % mediaTracks.length;
+            currentProgress = 0;
+            if (isPlaying) startRealAudioSynth(mediaTracks[currentTrackIndex].freq);
+            updatePlayerUI();
+            renderMediaQueue();
+        }
+
+        function seekTrack(val) {
+            currentProgress = Number(val);
+            updatePlayerUI();
+        }
+
+        function setMediaFilter(filter) {
+            activeFilter = filter;
+            document.querySelectorAll('.media-filter-chip').forEach(btn => {
+                const active = btn.dataset.filter === filter;
+                btn.className = active
+                    ? 'media-filter-chip px-3 py-1.5 rounded-xl text-xs font-bold accent-gradient text-white shrink-0'
+                    : 'media-filter-chip px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/[0.05] text-slate-300 shrink-0';
+            });
+            renderMediaQueue();
+        }
+
+        function updatePlayerUI() {
+            const track = mediaTracks[currentTrackIndex] || mediaTracks[0];
+            const elapsedSec = (currentProgress / 100) * track.durationSec;
+
+            const titleEl = document.getElementById('media-track-title');
+            const artistEl = document.getElementById('media-track-artist');
+            const sourceTag = document.getElementById('media-source-tag');
+            const scrubber = document.getElementById('media-scrubber');
+            const curTimeEl = document.getElementById('media-time-current');
+            const totTimeEl = document.getElementById('media-time-total');
+            const eq = document.getElementById('equalizer-bars');
+            const homeTitle = document.getElementById('home-now-title');
+            const homeArtist = document.getElementById('home-now-artist');
+
+            if (titleEl) titleEl.textContent = track.title;
+            if (artistEl) artistEl.textContent = track.artist;
+            if (sourceTag) sourceTag.textContent = `OFFLINE • ${track.quality}`;
+            if (scrubber) scrubber.value = currentProgress;
+            if (curTimeEl) curTimeEl.textContent = formatTime(elapsedSec);
+            if (totTimeEl) totTimeEl.textContent = formatTime(track.durationSec);
+            if (homeTitle) homeTitle.textContent = track.title;
+            if (homeArtist) homeArtist.textContent = track.artist;
+            if (eq) eq.classList.toggle('eq-paused', !isPlaying);
+
+            const iconName = isPlaying ? 'pause' : 'play';
+            const mediaIcon = document.getElementById('media-play-icon');
+            const homeIcon = document.getElementById('home-play-icon');
+            if (mediaIcon) mediaIcon.setAttribute('data-lucide', iconName);
+            if (homeIcon) homeIcon.setAttribute('data-lucide', iconName);
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function renderMediaQueue() {
+            const container = document.getElementById('media-queue-list');
+            const homeRecent = document.getElementById('home-recent-list');
+            const filtered = activeFilter === 'all' ? mediaTracks : mediaTracks.filter(t => t.source === activeFilter);
+
+            if (container) {
+                if (filtered.length === 0) {
+                    container.innerHTML = `<div class="surface-card rounded-2xl p-4 text-center text-xs text-slate-400">No offline tracks found for "${activeFilter}".</div>`;
+                } else {
+                    container.innerHTML = filtered.map(track => {
+                        const realIdx = mediaTracks.findIndex(item => item.id === track.id);
+                        const active = realIdx === currentTrackIndex;
+                        return `
+                            <div onclick="playSpecificTrack(${realIdx})" class="surface-card rounded-2xl p-3 flex items-center justify-between gap-3 cursor-pointer ${active ? 'accent-border' : ''}">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-9 h-9 rounded-xl ${active ? 'accent-gradient text-white' : 'bg-white/5 text-slate-300'} flex items-center justify-center shrink-0">
+                                        <i data-lucide="${active && isPlaying ? 'volume-2' : 'music'}" class="w-4 h-4"></i>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-white truncate">${track.title}</p>
+                                        <p class="text-[10px] text-slate-400 truncate">${track.artist} • ${track.quality}</p>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] font-semibold text-slate-400 shrink-0">${formatTime(track.durationSec)}</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            if (homeRecent) {
+                homeRecent.innerHTML = mediaTracks.slice(0, 3).map(track => {
+                    const realIdx = mediaTracks.findIndex(item => item.id === track.id);
+                    return `
+                        <div onclick="playSpecificTrack(${realIdx}); switchTab('media');" class="surface-card rounded-2xl p-2.5 flex items-center justify-between gap-2 cursor-pointer">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-xl accent-bg-soft accent-text flex items-center justify-center shrink-0">
+                                    <i data-lucide="file-audio" class="w-4 h-4"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-semibold text-white truncate">${track.title}</p>
+                                    <p class="text-[10px] text-slate-400 truncate">${track.sizeMB} MB • ${track.quality}</p>
+                                </div>
+                            </div>
+                            <i data-lucide="play-circle" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function detectSourceFromUrl(urlStr) {
+            const u = (urlStr || '').toLowerCase();
+            if (u.includes('apple')) return 'apple';
+            if (u.includes('youtu')) return 'youtube';
+            if (u.includes('instagram') || u.includes('reel')) return 'instagram';
+            return 'spotify';
+        }
+
+        function autoDetectInputSource() {
+            const inputEl = document.getElementById('dl-url-input');
+            const badge = document.getElementById('detected-source-badge');
+            const detected = detectSourceFromUrl(inputEl ? inputEl.value : '');
+            activeSourceKey = detected;
+            if (badge && multiSourceCatalog[detected]) {
+                badge.textContent = `Detected: ${multiSourceCatalog[detected].sourceName}`;
+            }
+        }
+
+        function selectSourcePreset(sourceKey) {
+            if (!multiSourceCatalog[sourceKey]) return;
+            activeSourceKey = sourceKey;
+            const catalog = multiSourceCatalog[sourceKey];
+            const inputEl = document.getElementById('dl-url-input');
+            if (inputEl) inputEl.value = catalog.demoUrl;
+            const badge = document.getElementById('detected-source-badge');
+            if (badge) badge.textContent = `Detected: ${catalog.sourceName}`;
+            if (sourceKey === 'instagram') setDownloadMode('single');
+            fetchPlaylistPreview();
+        }
+
+        function pasteDemoLink() {
+            const keys = Object.keys(multiSourceCatalog);
+            const nextKey = keys[(keys.indexOf(activeSourceKey) + 1) % keys.length];
+            selectSourcePreset(nextKey);
+            showToast(`Loaded ${multiSourceCatalog[nextKey].sourceName} link`);
+        }
+
+        function setDownloadMode(mode) {
+            downloadMode = mode;
+            const plBtn = document.getElementById('mode-playlist-btn');
+            const sgBtn = document.getElementById('mode-single-btn');
+            if (plBtn && sgBtn) {
+                if (mode === 'playlist') {
+                    plBtn.className = 'py-2 rounded-xl text-[11px] font-bold accent-gradient text-white transition';
+                    sgBtn.className = 'py-2 rounded-xl text-[11px] font-semibold text-slate-400 transition';
+                } else {
+                    sgBtn.className = 'py-2 rounded-xl text-[11px] font-bold accent-gradient text-white transition';
+                    plBtn.className = 'py-2 rounded-xl text-[11px] font-semibold text-slate-400 transition';
+                }
+            }
+            renderPlaylistPreview();
+        }
+
+        function setAudioQuality(qual) {
+            selectedQuality = qual;
+            document.querySelectorAll('.qual-chip').forEach(chip => {
+                if (chip.dataset.qual === qual) {
+                    chip.className = 'qual-chip px-2.5 py-1 rounded-xl text-[10px] font-bold accent-bg-soft accent-text border accent-border';
+                } else {
+                    chip.className = 'qual-chip px-2.5 py-1 rounded-xl text-[10px] font-semibold bg-white/5 text-slate-400 border border-transparent';
+                }
+            });
+            const qTag = document.getElementById('preview-quality-tag');
+            if (qTag) qTag.textContent = qual;
+            showToast(`Quality: ${qual}`);
+        }
+
+        function fetchPlaylistPreview() {
+            const inputEl = document.getElementById('dl-url-input');
+            const detected = detectSourceFromUrl(inputEl ? inputEl.value : '');
+            activeSourceKey = detected;
+            const catalog = multiSourceCatalog[activeSourceKey];
+            const badge = document.getElementById('detected-source-badge');
+            if (badge) badge.textContent = `Detected: ${catalog.sourceName}`;
+            currentFetchedPlaylist = JSON.parse(JSON.stringify(catalog));
+            renderPlaylistPreview();
+            showToast(`Fetched ${catalog.sourceName}`);
+        }
+
+        function toggleTrackSelection(index) {
+            const targetList = downloadMode === 'single' ? [currentFetchedPlaylist.tracks[0]] : currentFetchedPlaylist.tracks;
+            if (targetList[index]) targetList[index].checked = !targetList[index].checked;
+            updateSelectedDownloadButton();
+        }
+
+        function setAllTracksChecked(checkedState) {
+            const targetList = downloadMode === 'single' ? [currentFetchedPlaylist.tracks[0]] : currentFetchedPlaylist.tracks;
+            targetList.forEach(t => { t.checked = checkedState; });
+            renderPlaylistPreview();
+        }
+
+        function updateSelectedDownloadButton() {
+            const tracksToShow = downloadMode === 'single' ? [currentFetchedPlaylist.tracks[0]] : currentFetchedPlaylist.tracks;
+            const selectedCount = tracksToShow.filter(t => t.checked).length;
+            const dlBtn = document.getElementById('download-selected-btn');
+            if (dlBtn) {
+                dlBtn.innerHTML = `<i data-lucide="download" class="w-4 h-4"></i><span>Download Selected (${selectedCount})</span>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+
+        function renderPlaylistPreview() {
+            const tracksToShow = downloadMode === 'single' ? [currentFetchedPlaylist.tracks[0]] : currentFetchedPlaylist.tracks;
+            const totalMB = tracksToShow.reduce((acc, t) => acc + t.sizeMB, 0).toFixed(1);
+
+            const sourcePill = document.getElementById('preview-source-pill');
+            if (sourcePill) {
+                sourcePill.textContent = currentFetchedPlaylist.sourceName || 'SPOTIFY';
+                sourcePill.className = `px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${currentFetchedPlaylist.sourceColor || 'bg-[#1DB954]/20 text-[#1DB954]'}`;
+            }
+
+            const typeTag = document.getElementById('preview-type-tag');
+            if (typeTag) typeTag.textContent = downloadMode === 'single' ? 'SINGLE TRACK' : 'PLAYLIST READY';
+
+            const titleEl = document.getElementById('preview-title');
+            if (titleEl) titleEl.textContent = downloadMode === 'single' ? tracksToShow[0].title : currentFetchedPlaylist.title;
+
+            const metaEl = document.getElementById('preview-meta');
+            if (metaEl) metaEl.textContent = `${tracksToShow.length} ${tracksToShow.length === 1 ? 'Song' : 'Songs'} • ${totalMB} MB Total`;
+
+            const badgeCount = document.getElementById('preview-badge-count');
+            if (badgeCount) badgeCount.textContent = `${tracksToShow.length} ${tracksToShow.length === 1 ? 'Track' : 'Tracks'}`;
+
+            const qTag = document.getElementById('preview-quality-tag');
+            if (qTag) qTag.textContent = selectedQuality;
+
+            const container = document.getElementById('playlist-tracks-list');
+            if (container) {
+                container.innerHTML = tracksToShow.map((track, idx) => `
+                    <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-white/[0.03] border border-white/5">
+                        <label class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer">
+                            <input type="checkbox" ${track.checked ? 'checked' : ''} onchange="toggleTrackSelection(${idx})" class="rounded">
+                            <div class="min-w-0">
+                                <p class="text-[11px] font-semibold text-white truncate">${track.title}</p>
+                                <p class="text-[10px] text-slate-400 truncate">${track.artist} • ${track.duration}</p>
+                            </div>
+                        </label>
+                        <span class="text-[10px] font-semibold text-slate-400 shrink-0">${track.sizeMB} MB</span>
+                    </div>
+                `).join('');
+            }
+
+            updateSelectedDownloadButton();
+        }
+
+        function startBatchDownload() {
+            const tracksToShow = downloadMode === 'single' ? [currentFetchedPlaylist.tracks[0]] : currentFetchedPlaylist.tracks;
+            const chosen = tracksToShow.filter(t => t.checked);
+
+            if (chosen.length === 0) {
+                showToast('Select at least one track');
+                return;
+            }
+
+            chosen.forEach(track => {
+                const jobId = `dl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+                const job = {
+                    id: jobId,
+                    title: track.title,
+                    artist: track.artist,
+                    source: activeSourceKey,
+                    quality: selectedQuality,
+                    sizeMB: track.sizeMB,
+                    durationSec: track.durationSec || 180,
+                    freq: track.freq || 330,
+                    progress: 0,
+                    done: false
+                };
+                downloadQueue.unshift(job);
+
+                const timer = setInterval(() => {
+                    job.progress += Math.floor(Math.random() * 18) + 12;
+                    if (job.progress >= 100) {
+                        job.progress = 100;
+                        job.done = true;
+                        clearInterval(timer);
+
+                        if (!mediaTracks.some(m => m.title === job.title)) {
+                            mediaTracks.unshift({
+                                id: `lib-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+                                title: job.title,
+                                artist: `${job.artist} • Offline Saved`,
+                                source: job.source,
+                                durationSec: job.durationSec,
+                                sizeMB: job.sizeMB,
+                                quality: job.quality,
+                                freq: job.freq
+                            });
+                            currentTrackIndex = 0;
+                            renderMediaQueue();
+                            updatePlayerUI();
+                        }
+                    }
+                    renderDownloadQueue();
+                }, 450);
+            });
+
+            renderDownloadQueue();
+            showToast(`Downloading ${chosen.length} track(s)`);
+        }
+
+        function playDownloadedItem(jobId) {
+            const job = downloadQueue.find(j => j.id === jobId);
+            if (!job || !job.done) {
+                showToast('Download in progress...');
+                return;
+            }
+            const idx = mediaTracks.findIndex(m => m.title === job.title);
+            if (idx !== -1) {
+                playSpecificTrack(idx);
+                switchTab('media');
+            }
+        }
+
+        function renderDownloadQueue() {
+            const listEl = document.getElementById('active-downloads-list');
+            const countLabel = document.getElementById('queue-count-label');
+            const activeCount = downloadQueue.filter(j => !j.done).length;
+            if (countLabel) countLabel.textContent = `${activeCount} Active • ${downloadQueue.length} Total`;
+            if (!listEl) return;
+
+            if (downloadQueue.length === 0) {
+                listEl.innerHTML = `<div class="surface-card rounded-2xl p-3 text-center text-xs text-slate-400">No active downloads. Fetch a playlist or song above and tap Download.</div>`;
+                return;
+            }
+
+            listEl.innerHTML = downloadQueue.map(job => `
+                <div class="surface-card rounded-2xl p-3 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold text-white truncate">${job.title}</p>
+                            <p class="text-[10px] text-slate-400 truncate">${job.quality} • ${job.sizeMB} MB • ${job.done ? 'Saved Offline' : job.progress + '%'}</p>
+                        </div>
+                        ${job.done
+                            ? `<button onclick="playDownloadedItem('${job.id}')" class="px-2.5 py-1.5 rounded-xl accent-gradient text-white text-[10px] font-bold shrink-0">Play Offline</button>`
+                            : `<span class="text-[11px] font-bold accent-text shrink-0">${job.progress}%</span>`
+                        }
+                    </div>
+                    <div class="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+                        <div class="h-full rounded-full ${job.done ? 'bg-emerald-400' : 'accent-gradient'} transition-all duration-300" style="width: ${job.progress}%;"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function runQuickBoostFromHome() {
+            const ramEl = document.getElementById('home-ram-text');
+            if (ramEl) ramEl.textContent = '4.2 GB';
+            showToast('Freed 820 MB RAM!');
+        }
+
+        function runSmartClean() {
+            storageUsedPct = Math.max(54, storageUsedPct - 6);
+            const valEl = document.getElementById('cleaner-gauge-val');
+            const barEl = document.getElementById('cleaner-progress-bar');
+            const statusEl = document.getElementById('cleaner-status-text');
+            const cacheEl = document.getElementById('home-cache-text');
+            if (valEl) valEl.textContent = `${storageUsedPct}%`;
+            if (barEl) barEl.style.width = `${storageUsedPct}%`;
+            if (statusEl) statusEl.textContent = 'Cleaned 1.24 GB junk & temp cache!';
+            if (cacheEl) cacheEl.textContent = '128 MB';
+            showToast('Cleaned 1.24 GB junk!');
+        }
+
+        function updateCutterLabel(val) {
+            const startSec = Math.floor(Number(val) / 2);
+            const endSec = startSec + 30;
+            const startStr = `${Math.floor(startSec / 60)}:${String(startSec % 60).padStart(2, '0')}`;
+            const endStr = `${Math.floor(endSec / 60)}:${String(endSec % 60).padStart(2, '0')}`;
+            const badge = document.getElementById('cutter-duration-badge');
+            const startEl = document.getElementById('cutter-start');
+            if (badge) badge.textContent = `${startStr} - ${endStr} (30s)`;
+            if (startEl) startEl.textContent = startStr;
+        }
+
+        function saveRingtoneClip() {
+            const startEl = document.getElementById('cutter-start');
+            showToast(`Ringtone exported from ${startEl ? startEl.textContent : '0:15'}`);
+        }
+
+        function runRamBoost() {
+            const desc = document.getElementById('ram-boost-desc');
+            const homeRam = document.getElementById('home-ram-text');
+            if (desc) desc.textContent = 'Freed 940 MB RAM • 14 background apps closed.';
+            if (homeRam) homeRam.textContent = '4.3 GB';
+            showToast('Turbo RAM Boost complete!');
+        }
+
+        function runDuplicateScan() {
+            const desc = document.getElementById('dup-scan-desc');
+            if (desc) desc.textContent = 'Found & merged 3 duplicate audio files (21.4 MB saved).';
+            showToast('3 duplicates cleaned!');
+        }
+
+        function togglePrivateVault() {
+            vaultUnlocked = !vaultUnlocked;
+            const textEl = document.getElementById('vault-status-text');
+            const btnEl = document.getElementById('vault-toggle-btn');
+            if (textEl) textEl.textContent = vaultUnlocked ? 'Unlocked • 6 protected files visible' : 'Locked • Hide sensitive downloads';
+            if (btnEl) btnEl.textContent = vaultUnlocked ? 'Lock' : 'Unlock';
+            showToast(vaultUnlocked ? 'Vault unlocked' : 'Vault locked');
+        }
+
+        function toggleWifiShare() {
+            wifiSharing = !wifiSharing;
+            const textEl = document.getElementById('wifi-share-text');
+            if (textEl) textEl.textContent = wifiSharing ? 'Active • http://192.168.1.42:8080' : 'http://192.168.1.42:8080';
+            showToast(wifiSharing ? 'Wi-Fi Share ON' : 'Wi-Fi Share OFF');
+        }
+
+        function openSettingsModal() {
+            const modal = document.getElementById('settings-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('settings-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function setAccentTheme(theme) {
+            const palettes = {
+                cyan: { from: '#06b6d4', to: '#3b82f6', hex: '#22d3ee', soft: 'rgba(34, 211, 238, 0.14)', border: 'rgba(34, 211, 238, 0.35)' },
+                violet: { from: '#8b5cf6', to: '#d946ef', hex: '#a78bfa', soft: 'rgba(167, 139, 250, 0.14)', border: 'rgba(167, 139, 250, 0.35)' },
+                emerald: { from: '#10b981', to: '#14b8a6', hex: '#34d399', soft: 'rgba(52, 211, 153, 0.14)', border: 'rgba(52, 211, 153, 0.35)' },
+                amber: { from: '#f59e0b', to: '#f97316', hex: '#fbbf24', soft: 'rgba(251, 191, 36, 0.14)', border: 'rgba(251, 191, 36, 0.35)' }
+            };
+            const p = palettes[theme] || palettes.cyan;
+            const root = document.documentElement;
+            root.style.setProperty('--accent-from', p.from);
+            root.style.setProperty('--accent-to', p.to);
+            root.style.setProperty('--accent-hex', p.hex);
+            root.style.setProperty('--accent-soft', p.soft);
+            root.style.setProperty('--accent-border', p.border);
+            showToast(`Theme: ${theme.toUpperCase()}`);
+        }
+
+        function toggleOledMode() {
+            oledEnabled = !oledEnabled;
+            document.body.classList.toggle('oled-mode', oledEnabled);
+            const btn = document.getElementById('oled-toggle-btn');
+            if (btn) btn.textContent = oledEnabled ? 'ON' : 'OFF';
+            showToast(oledEnabled ? 'OLED Mode ON' : 'OLED Mode OFF');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderMediaQueue();
+            updatePlayerUI();
+            renderPlaylistPreview();
+            renderDownloadQueue();
+            switchTab('home');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
