@@ -18,19 +18,17 @@ steps:
   - name: Set up JDK 17
     uses: actions/setup-java@v4
     with:
-      java-version: "17"
-      distribution: "temurin"
+      java-version: '17'
+      distribution: 'temurin'
 
   - name: Set up Android SDK
     uses: android-actions/setup-android@v3
 
-  - name: Set up Gradle
+  - name: Setup Gradle
     uses: gradle/actions/setup-gradle@v3
 
-  - name: Create Android WebView project structure
-    shell: bash
+  - name: Prepare Android project structure
     run: |
-      set -e
       mkdir -p app/src/main/java/com/novaplay/utility
       mkdir -p app/src/main/res/layout
       mkdir -p app/src/main/res/values
@@ -41,115 +39,119 @@ steps:
       elif [ -f "index.html" ]; then
         cp index.html app/src/main/assets/index.html
       else
-        printf '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NovaPlay &amp; Utility</title></head><body style="background:#07080e;color:#fff;font-family:sans-serif;padding:24px;"><h2>NovaPlay &amp; Utility</h2><p>APK build succeeded.</p></body></html>\n' > app/src/main/assets/index.html
+        printf '<!DOCTYPE html><html><body style="background:#07080e;color:#fff;font-family:sans-serif;padding:24px;"><h2>NovaPlay & Utility</h2><p>Add novaplay_mobile_apk.html or index.html to repository root.</p></body></html>\n' > app/src/main/assets/index.html
       fi
 
-      cat << 'EOF' > settings.gradle.kts
-      pluginManagement {
-        repositories {
-          google()
-          mavenCentral()
-          gradlePluginPortal()
-        }
-      }
-      dependencyResolutionManagement {
-        repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-        repositories {
-          google()
-          mavenCentral()
-        }
-      }
+      cat << 'EOF' > settings.gradle
       rootProject.name = "NovaPlayUtility"
-      include(":app")
+      include ":app"
       EOF
 
-      cat << 'EOF' > build.gradle.kts
-      plugins {
-        id("com.android.application") version "8.5.2" apply false
-        id("org.jetbrains.kotlin.android") version "1.9.24" apply false
+      cat << 'EOF' > build.gradle
+      buildscript {
+          ext.kotlin_version = '1.9.24'
+          repositories {
+              google()
+              mavenCentral()
+          }
+          dependencies {
+              classpath 'com.android.tools.build:gradle:8.5.2'
+              classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+          }
+      }
+      allprojects {
+          repositories {
+              google()
+              mavenCentral()
+          }
       }
       EOF
 
-      cat << 'EOF' > app/build.gradle.kts
+      cat << 'EOF' > app/build.gradle
       plugins {
-        id("com.android.application")
-        id("org.jetbrains.kotlin.android")
+          id 'com.android.application'
+          id 'org.jetbrains.kotlin.android'
       }
 
       android {
-        namespace = "com.novaplay.utility"
-        compileSdk = 34
+          namespace 'com.novaplay.utility'
+          compileSdk 34
 
-        defaultConfig {
-          applicationId = "com.novaplay.utility"
-          minSdk = 24
-          targetSdk = 34
-          versionCode = 1
-          versionName = "1.0.0"
-        }
-
-        buildTypes {
-          release {
-            isMinifyEnabled = false
+          defaultConfig {
+              applicationId "com.novaplay.utility"
+              minSdk 24
+              targetSdk 34
+              versionCode 1
+              versionName "1.0"
           }
-        }
 
-        compileOptions {
-          sourceCompatibility = JavaVersion.VERSION_17
-          targetCompatibility = JavaVersion.VERSION_17
-        }
+          buildTypes {
+              release {
+                  minifyEnabled false
+              }
+              debug {
+                  minifyEnabled false
+              }
+          }
 
-        kotlinOptions {
-          jvmTarget = "17"
-        }
+          compileOptions {
+              sourceCompatibility JavaVersion.VERSION_17
+              targetCompatibility JavaVersion.VERSION_17
+          }
+
+          kotlinOptions {
+              jvmTarget = '17'
+          }
       }
 
       dependencies {
-        implementation("androidx.core:core-ktx:1.13.1")
-        implementation("androidx.appcompat:appcompat:1.7.0")
-        implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+          implementation 'androidx.core:core-ktx:1.13.1'
+          implementation 'androidx.appcompat:appcompat:1.7.0'
+          implementation 'com.google.android.material:material:1.12.0'
+          implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
       }
       EOF
 
       cat << 'EOF' > app/src/main/AndroidManifest.xml
       <?xml version="1.0" encoding="utf-8"?>
       <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-        <uses-permission android:name="android.permission.INTERNET" />
-        <application
-          android:allowBackup="true"
-          android:label="NovaPlay &amp; Utility"
-          android:theme="@style/Theme.AppCompat.NoActionBar"
-          android:usesCleartextTraffic="true">
-          <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-              <action android:name="android.intent.action.MAIN" />
-              <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-          </activity>
-        </application>
+
+          <uses-permission android:name="android.permission.INTERNET" />
+          <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+          <application
+              android:allowBackup="true"
+              android:label="NovaPlay &amp; Utility"
+              android:theme="@style/Theme.AppCompat.NoActionBar"
+              android:usesCleartextTraffic="true">
+
+              <activity
+                  android:name=".MainActivity"
+                  android:exported="true"
+                  android:configChanges="orientation|screenSize|keyboardHidden">
+                  <intent-filter>
+                      <action android:name="android.intent.action.MAIN" />
+                      <category android:name="android.intent.category.LAUNCHER" />
+                  </intent-filter>
+              </activity>
+
+          </application>
       </manifest>
       EOF
 
       cat << 'EOF' > app/src/main/res/layout/activity_main.xml
       <?xml version="1.0" encoding="utf-8"?>
-      <androidx.constraintlayout.widget.ConstraintLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#07080E">
+      <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:background="#07080E">
 
-        <WebView
-          android:id="@+id/novaplayWebView"
-          android:layout_width="0dp"
-          android:layout_height="0dp"
-          app:layout_constraintTop_toTopOf="parent"
-          app:layout_constraintBottom_toBottomOf="parent"
-          app:layout_constraintStart_toStartOf="parent"
-          app:layout_constraintEnd_toEndOf="parent" />
-      </androidx.constraintlayout.widget.ConstraintLayout>
+          <WebView
+              android:id="@+id/novaplayWebView"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent" />
+
+      </FrameLayout>
       EOF
 
       cat << 'EOF' > app/src/main/java/com/novaplay/utility/MainActivity.kt
@@ -164,32 +166,50 @@ steps:
       import androidx.appcompat.app.AppCompatActivity
 
       class MainActivity : AppCompatActivity() {
-        private lateinit var webView: WebView
 
-        @SuppressLint("SetJavaScriptEnabled")
-        override fun onCreate(savedInstanceState: Bundle?) {
-          super.onCreate(savedInstanceState)
-          setContentView(R.layout.activity_main)
-          webView = findViewById(R.id.novaplayWebView)
+          private lateinit var webView: WebView
 
-          val settings: WebSettings = webView.settings
-          settings.javaScriptEnabled = true
-          settings.domStorageEnabled = true
-          settings.allowFileAccess = true
-          settings.mediaPlaybackRequiresUserGesture = false
+          @SuppressLint("SetJavaScriptEnabled")
+          override fun onCreate(savedInstanceState: Bundle?) {
+              super.onCreate(savedInstanceState)
+              setContentView(R.layout.activity_main)
 
-          webView.webViewClient = WebViewClient()
-          webView.webChromeClient = WebChromeClient()
-          webView.loadUrl("file:///android_asset/index.html")
-        }
+              webView = findViewById(R.id.novaplayWebView)
+              webView.setBackgroundColor(android.graphics.Color.parseColor("#07080E"))
+
+              val settings: WebSettings = webView.settings
+              settings.javaScriptEnabled = true
+              settings.domStorageEnabled = true
+              settings.databaseEnabled = true
+              settings.allowFileAccess = true
+              settings.mediaPlaybackRequiresUserGesture = false
+              settings.useWideViewPort = true
+              settings.loadWithOverviewMode = true
+
+              webView.webViewClient = WebViewClient()
+              webView.webChromeClient = WebChromeClient()
+
+              webView.loadUrl("file:///android_asset/index.html")
+          }
+
+          @Deprecated("Deprecated in Java")
+          override fun onBackPressed() {
+              if (::webView.isInitialized && webView.canGoBack()) {
+                  webView.goBack()
+              } else {
+                  @Suppress("DEPRECATION")
+                  super.onBackPressed()
+              }
+          }
       }
       EOF
 
-  - name: Assemble Debug APK
-    shell: bash
-    run: gradle assembleDebug
+      gradle wrapper --gradle-version 8.7
 
-  - name: Upload Debug APK Artifact
+  - name: Build Debug APK
+    run: ./gradlew assembleDebug
+
+  - name: Upload APK Artifact
     uses: actions/upload-artifact@v4
     with:
       name: NovaPlay-Utility-APK
